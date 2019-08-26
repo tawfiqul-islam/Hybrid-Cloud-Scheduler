@@ -81,18 +81,18 @@ public class LPSolver {
 
         //set objective function: agent selection as decision variables
         for(int i=0;i<SchedulerUtil.agentList.size();i++) {
-            lpw.plus("x-"+SchedulerUtil.agentList.get(i).getId(),SchedulerUtil.agentList.get(i).getPrice());
+            lpw.plus("x-"+SchedulerUtil.agentList.get(i).getId(),(int)(SchedulerUtil.agentList.get(i).getDefaultCPU()/4));
             lpw.setBoolean("x-"+SchedulerUtil.agentList.get(i).getId());
         }
         //totalCost constraint
         double totalCost=0;
 
         for(int i=0;i<SchedulerUtil.agentList.size();i++) {
-            totalCost+=SchedulerUtil.agentList.get(i).getPrice();
+            totalCost+=(int)(SchedulerUtil.agentList.get(i).getDefaultCPU()/4);
         }
         LPWizardConstraint totalCostCons = lpw.addConstraint("tc_cons",totalCost,">=");
         for(int i=0;i<SchedulerUtil.agentList.size();i++) {
-            totalCostCons.plus("x-"+SchedulerUtil.agentList.get(i).getId(),SchedulerUtil.agentList.get(i).getPrice());
+            totalCostCons.plus("x-"+SchedulerUtil.agentList.get(i).getId(),(int)(SchedulerUtil.agentList.get(i).getDefaultCPU()/4));
         }
 
         //set constraints: 1. executor placement constraint-> 1 executor in at most 1 agent

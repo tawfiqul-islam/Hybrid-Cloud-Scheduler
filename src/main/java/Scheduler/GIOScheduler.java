@@ -93,7 +93,7 @@ public class GIOScheduler extends Thread {
             }
 
             if (shutdown&&(SchedulerUtil.fullySubmittedJobList.size()==0||(System.currentTimeMillis()-shutdownJobArrivalTime)/1000>=1200)) {
-                Log.SchedulerLogging.log(Level.INFO, GIOScheduler.class.getName() + "Shutting Down FirstFitDecreasing Scheduler. Job Queue is Empty...");
+                Log.SchedulerLogging.log(Level.INFO, GIOScheduler.class.getName() + "Shutting Down GIOHybrid Scheduler. Job Queue is Empty...");
                 SchedulerManager.shutDown();
                 break;
             }
