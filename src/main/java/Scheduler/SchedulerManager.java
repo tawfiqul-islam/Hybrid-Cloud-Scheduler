@@ -159,6 +159,24 @@ public class SchedulerManager {
             GIOScheduler gioSchedulerObj = new GIOScheduler();
             gioSchedulerObj.start();
         }
+        else if(SchedulerUtil.schedulerAlgorithm==Algorithm.GIOImproved) {
+            Log.SchedulerLogging.log(Level.INFO,SchedulerManager.class.getName()+": Started GIOImprovedHybrid Scheduler ");
+            startTime=System.currentTimeMillis();
+            GIOImprovedScheduler gioImprovedSchedulerObj = new GIOImprovedScheduler();
+            gioImprovedSchedulerObj.start();
+        }
+        else if(SchedulerUtil.schedulerAlgorithm==Algorithm.RRConsolidate) {
+            Log.SchedulerLogging.log(Level.INFO,SchedulerManager.class.getName()+": Started RRConsolidate Scheduler ");
+            startTime=System.currentTimeMillis();
+            RoundRobinConsolidateScheduler roundRobinConsolidateSchedulerObj = new RoundRobinConsolidateScheduler();
+            roundRobinConsolidateSchedulerObj.start();
+        }
+        else if(SchedulerUtil.schedulerAlgorithm==Algorithm.ASQ) {
+            Log.SchedulerLogging.log(Level.INFO,SchedulerManager.class.getName()+": Started ASQ Scheduler ");
+            startTime=System.currentTimeMillis();
+            AsQScheduler AsQSchedulerObj = new AsQScheduler();
+            AsQSchedulerObj.start();
+        }
         else {
             //log error..not scheduling algorithm is chosen...or use a default scheduler
             Log.SchedulerLogging.log(Level.SEVERE,SchedulerManager.class.getName()+": No Scheduler Algorithm was selected in configuration");

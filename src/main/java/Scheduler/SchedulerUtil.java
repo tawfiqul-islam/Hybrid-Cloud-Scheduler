@@ -16,6 +16,7 @@ public class SchedulerUtil {
     public static String schedulerIP;
     public static int schedulerAlgorithm;
     public static double resourceSplitThreshold;
+    public static double networkPenalty;
     public static long schedulingInterval;
     public static List<Job> jobBuffer = Collections.synchronizedList(new ArrayList<Job>());
     public static List<Job> jobQueue = Collections.synchronizedList(new ArrayList<Job>());

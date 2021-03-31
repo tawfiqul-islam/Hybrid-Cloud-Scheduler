@@ -11,5 +11,7 @@ public class Algorithm {
     public static final int FFHybrid=8;
     public static final int GIOHybrid=9;
     public static final int MILPHybrid=10;
-
+    public static final int GIOImproved=11;
+    public static final int RRConsolidate=12;
+    public static final int ASQ=13;
 }

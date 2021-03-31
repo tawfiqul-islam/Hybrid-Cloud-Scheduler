@@ -1,50 +1,58 @@
-package Operator;
+package ONOS;
 
 import Entity.Agent;
 import Entity.Executor;
 import Entity.Framework;
 import Monitor.MonitorManager;
-import Settings.Settings;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.auth.AuthScope;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import Settings.Settings;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
-import org.json.*;
-import java.io.*;
-import java.util.*;
 
 public class HTTPAPI {
 
     public static ServerResponse RESERVE(String role, double CPU, double memory, String agentID)
     {
         JSONArray reserveJSONObj = constructReservationJSON(role,CPU,memory);
-        return reservationHTTPPost(reserveJSONObj,agentID,Settings.mesosMasterURI+"/master/reserve");
+        return reservationHTTPPost(reserveJSONObj,agentID,Settings.onosURI+"/master/reserve");
     }
 
     public static ServerResponse UNRESERVE(String role, double CPU, double memory, String agentID)
     {
         JSONArray reserveJSONObj = constructReservationJSON(role,CPU,memory);
-        return reservationHTTPPost(reserveJSONObj,agentID,Settings.mesosMasterURI+"/master/unreserve");
+        return reservationHTTPPost(reserveJSONObj,agentID,Settings.onosURI+"/master/unreserve");
     }
 
-    public static boolean GET_HEALTH()
+    public static void GET_DEVICES()
     {
-        JSONObject statusJSONObj = constructStatusJSON(Constants.GET_HEALTH);
-        ServerResponse serverResponseObj = HTTPPostSender(statusJSONObj,Settings.mesosMasterURI+"/api/v1");
-        return parseGetHealthResponse(serverResponseObj.getResponseString());
+        ServerResponse serverResponseObj = HTTPGETSender(Settings.onosURI+"applications");
+        System.out.println("GET DEVICES response: "+serverResponseObj.getResponseString());
+        parseDevices(serverResponseObj.getResponseString());
     }
 
     public static ArrayList<Agent> GET_AGENT()
     {
         JSONObject statusJSONObj = constructStatusJSON(Constants.GET_STATE);
-        ServerResponse serverResponseObj = HTTPPostSender(statusJSONObj,Settings.mesosMasterURI+"/api/v1");
+        ServerResponse serverResponseObj = HTTPPostSender(statusJSONObj,Settings.onosURI+"/api/v1");
         //System.out.println("GET agent response: "+serverResponseObj.responseString);
         return parseAgents(serverResponseObj.getResponseString());
     }
@@ -52,7 +60,7 @@ public class HTTPAPI {
     public static ArrayList<Framework> GET_FRAMEWORK()
     {
         JSONObject statusJSONObj = constructStatusJSON(Constants.GET_STATE);
-        ServerResponse serverResponseObj = HTTPPostSender(statusJSONObj,Settings.mesosMasterURI+"/api/v1");
+        ServerResponse serverResponseObj = HTTPPostSender(statusJSONObj,Settings.onosURI+"/api/v1");
         //System.out.println("Get framework response: "+serverResponseObj.responseString);
         return parseFrameworks(serverResponseObj.getResponseString());
     }
@@ -87,13 +95,13 @@ public class HTTPAPI {
                 }
 
             } catch(Exception e){
-                Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in reservationHTTPPost: "+ e.toString());
+                Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in reservationHTTPPost: "+ e.toString());
             }finally {
                 response.close();
             }
 
         }catch(Exception e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in reservationHTTPPost: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in reservationHTTPPost: "+ e.toString());
         }
 
         serverResponseObj.setResponseString(outputStr);
@@ -133,7 +141,7 @@ public class HTTPAPI {
             httpClient.close();
 
         } catch (Exception e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in statusHTTPPost: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in statusHTTPPost: "+ e.toString());
         }
 
         serverResponseObj.setResponseString(outputStr);
@@ -147,11 +155,15 @@ public class HTTPAPI {
 
         try {
 
-            CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+            CredentialsProvider provider = new BasicCredentialsProvider();
+            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("onos", "rocks");
+            provider.setCredentials(AuthScope.ANY, credentials);
+
+            CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
             HttpGet getRequest = new HttpGet(httpURI);
 
 
-            getRequest.setHeader("Content-Type", "application/json");
+            //getRequest.setHeader("Content-Type", "application/json");
             getRequest.setHeader("Accept", "application/json");
 
             CloseableHttpResponse response = httpClient.execute(getRequest);
@@ -200,7 +212,7 @@ public class HTTPAPI {
             resourceArray.put(memObj);
 
         } catch (Exception e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in constructReservationJSON: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in constructReservationJSON: "+ e.toString());
         }
 
         return resourceArray;
@@ -223,22 +235,15 @@ public class HTTPAPI {
             }
 
         } catch (JSONException e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in constructStatusJSON: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in constructStatusJSON: "+ e.toString());
         }
 
         return obj;
     }
 
-    private static boolean parseGetHealthResponse(String responseStr){
+    private static void parseDevices(String responseStr){
 
-        Boolean health = null;
-        try {
-            health = (Boolean) new JSONObject(responseStr).getJSONObject("get_health").get("healthy");
-        } catch (JSONException e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in parseGetHealthResponse: "+ e.toString());
-        }
-        //System.out.println(health);
-        return health;
+        System.out.println("DEVICES\n\n"+responseStr);
     }
 
     private static ArrayList<Agent> parseAgents(String responseStr) {
@@ -264,7 +269,7 @@ public class HTTPAPI {
                             agentObj.setCpu(resources.getJSONObject(j).getJSONObject("scalar").getDouble("value"));
                             agentObj.setDefaultCPU(agentObj.getCpu());
                             agentObj.setPrice((agentObj.getCpu()/4)*(0.24/3600));
-                            Log.SchedulerLogging.log(Level.INFO,HTTPAPI.class.getName()+" Agent ID in Mesos: "+agentObj.getId());
+                            Log.SchedulerLogging.log(Level.INFO, HTTPAPI.class.getName()+" Agent ID in Mesos: "+agentObj.getId());
                             if(agentObj.getDefaultCPU()==4) {
                                 if(agentObj.getId().contains("S1")) {
                                     agentObj.setLocal(true);
@@ -305,7 +310,7 @@ public class HTTPAPI {
             }
 
         } catch (JSONException e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in parseAgents: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in parseAgents: "+ e.toString());
         }
         return agentList;
     }
@@ -327,7 +332,7 @@ public class HTTPAPI {
                 MonitorManager.slaveIPPort.add(tmpStr);
             }
         } catch (JSONException e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in parseSlaves: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in parseSlaves: "+ e.toString());
         }
     }
 
@@ -359,7 +364,7 @@ public class HTTPAPI {
             }
 
         }catch (JSONException e) {
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in parseExecutorMetrics: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in parseExecutorMetrics: "+ e.toString());
         }
         return execList;
     }
@@ -395,8 +400,12 @@ public class HTTPAPI {
                 }
             }
         } catch(JSONException e){
-            Log.SchedulerLogging.log(Level.SEVERE,HTTPAPI.class.getName()+" Exception in parseFrameworks: "+ e.toString());
+            Log.SchedulerLogging.log(Level.SEVERE, HTTPAPI.class.getName()+" Exception in parseFrameworks: "+ e.toString());
         }
         return frameworkList;
+    }
+
+    public static void main(String args[]) {
+            GET_DEVICES();
     }
 }
